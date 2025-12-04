@@ -1,9 +1,13 @@
 
+
 const { ipcRenderer } = require('electron');
 const bootstrap = require('bootstrap/dist/js/bootstrap.bundle.min.js');
 
 let currentMode = 'login';
 let unitsCache = [];
+let customFieldsCache = [];
+let editingFieldId = null; // Track which field is being edited
+let customFieldModal = null; // Bootstrap Modal Instance
 
 // Inject CSS for Modal z-index
 const style = document.createElement('style');
@@ -24,6 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let loginModal = null;
     if (loginModalEl) {
         loginModal = new bootstrap.Modal(loginModalEl);
+    }
+
+    // Init Custom Field Modal
+    const cfModalEl = document.getElementById('customFieldModal');
+    if (cfModalEl) {
+        customFieldModal = new bootstrap.Modal(cfModalEl);
     }
 
     const btnCommander = document.getElementById('btn-commander');
@@ -111,6 +121,53 @@ document.addEventListener('DOMContentLoaded', () => {
             changePassForm.reset();
         });
     }
+
+    // --- CUSTOM FIELD FORM SUBMIT HANDLER (CREATE & UPDATE) ---
+    const cfForm = document.getElementById('customFieldForm');
+    if (cfForm) {
+        cfForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                display_name: document.getElementById('cfDisplayName').value,
+                field_key: document.getElementById('cfKey').value.trim(),
+                data_type: document.getElementById('cfType').value,
+                unit_id: document.getElementById('cfUnit').value || null,
+                is_required: document.getElementById('cfRequired').checked ? 1 : 0
+            };
+
+            // Validation: Unique, không dấu, không khoảng trắng
+            // Strict Regex: Alphanumeric and underscores only
+            const keyRegex = /^[a-zA-Z0-9_]+$/;
+            if (!keyRegex.test(data.field_key)) {
+                showNotification('Khóa dữ liệu (field_key) không hợp lệ. Chỉ chấp nhận chữ cái không dấu, số và ký tự gạch dưới (_).', 'danger');
+                document.getElementById('cfKey').focus();
+                return;
+            }
+
+            let res;
+            if (editingFieldId) {
+                // UPDATE
+                res = await ipcRenderer.invoke('db:updateCustomField', { id: editingFieldId, data });
+            } else {
+                // CREATE
+                res = await ipcRenderer.invoke('db:addCustomField', data);
+            }
+
+            if (res.success) {
+                showNotification(editingFieldId ? 'Cập nhật thành công!' : 'Thêm trường dữ liệu mới thành công!', 'success');
+                if (customFieldModal) customFieldModal.hide();
+                loadCustomFieldManager();
+            } else {
+                // If it's a constraint error, it likely means key is not unique
+                if (res.error && res.error.includes('UNIQUE constraint failed')) {
+                    showNotification('Lỗi: Khóa dữ liệu này đã tồn tại. Vui lòng chọn khóa khác.', 'danger');
+                } else {
+                    showNotification(res.error, 'danger');
+                }
+            }
+        });
+    }
 });
 
 
@@ -184,6 +241,17 @@ function injectForm(selector) {
             window.addBioRow();
             window.addFamilyRow();
             window.addSocialRow('facebook');
+            // Fetch initial custom fields (Assuming no unit selected initially or fetch globals)
+            renderCustomInputsForUnit(null);
+
+            // Show Admin Custom Field Manager if in Admin Mode
+            if (currentMode === 'admin') {
+                const adminSection = container.querySelector('#admin-custom-field-manager');
+                if (adminSection) {
+                    adminSection.classList.remove('d-none');
+                    loadCustomFieldManager();
+                }
+            }
         }
     }
 }
@@ -224,6 +292,101 @@ function switchAdminView(view) {
         document.getElementById('view-settings').classList.remove('d-none');
         document.getElementById('nav-settings').classList.add('active');
         document.getElementById('page-title').innerText = "CÀI ĐẶT HỆ THỐNG";
+        // Removed loadCustomFieldManager() as it is now in the form tab
+    }
+}
+
+// --- ADMIN: CUSTOM FIELDS MANAGER ---
+
+// Load data into table
+async function loadCustomFieldManager() {
+    const tbody = document.getElementById('customFieldTableBody');
+    if (!tbody) return;
+
+    // Load Units for cache
+    if (unitsCache.length === 0) await loadUnits();
+
+    // Fetch all fields
+    const fields = await ipcRenderer.invoke('db:getCustomFields', 'all');
+    // Save to cache for edit lookup
+    customFieldsCache = fields;
+
+    tbody.innerHTML = '';
+    if (fields.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted small py-4">Chưa có trường tùy chỉnh nào được thiết lập.</td></tr>';
+        return;
+    }
+
+    fields.forEach(f => {
+        const unitName = f.unit_id ? (unitsCache.find(u => u.id === f.unit_id)?.ten_don_vi || 'Unknown ID:' + f.unit_id) : '<span class="badge bg-secondary">Toàn cục</span>';
+        const reqBadge = f.is_required ? '<span class="text-danger fw-bold">*</span>' : '';
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-medium">${f.display_name} ${reqBadge}</td>
+                <td><code class="text-primary">${f.field_key}</code></td>
+                <td><span class="badge bg-light text-dark border">${f.data_type}</span></td>
+                <td>${unitName}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-light border text-primary me-1" onclick="openCustomFieldModal('edit', ${f.id})" title="Sửa"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn btn-sm btn-light border text-danger" onclick="deleteCustomField(${f.id})" title="Xóa"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// Open Modal logic
+window.openCustomFieldModal = async function (mode, id = null) {
+    if (!customFieldModal) return;
+
+    // Ensure unit select is populated
+    const unitSelect = document.getElementById('cfUnit');
+    if (unitSelect && unitSelect.options.length <= 1) {
+        if (unitsCache.length === 0) await loadUnits();
+        unitSelect.innerHTML = '<option value="">-- Toàn Hệ Thống --</option>';
+        unitsCache.forEach(u => {
+            unitSelect.innerHTML += `<option value="${u.id}">${u.ten_don_vi}</option>`;
+        });
+    }
+
+    const modalTitle = document.getElementById('customFieldModalTitle');
+    const form = document.getElementById('customFieldForm');
+
+    // Reset Form
+    form.reset();
+
+    if (mode === 'edit' && id) {
+        editingFieldId = id;
+        modalTitle.innerText = "Cập Nhật Trường Tùy Chỉnh";
+
+        const field = customFieldsCache.find(f => f.id === id);
+        if (field) {
+            document.getElementById('cfDisplayName').value = field.display_name;
+            document.getElementById('cfKey').value = field.field_key;
+            document.getElementById('cfKey').disabled = true; // Key is read-only on edit
+            document.getElementById('cfType').value = field.data_type;
+            document.getElementById('cfUnit').value = field.unit_id || "";
+            document.getElementById('cfRequired').checked = !!field.is_required;
+        }
+    } else {
+        editingFieldId = null;
+        modalTitle.innerText = "Thêm Trường Tùy Chỉnh Mới";
+        document.getElementById('cfKey').disabled = false;
+    }
+
+    customFieldModal.show();
+}
+
+window.deleteCustomField = async function (id) {
+    if (confirm('CẢNH BÁO: Bạn có chắc muốn xóa trường này? Tất cả dữ liệu đã nhập cho trường này trong hồ sơ quân nhân sẽ bị mất và không thể khôi phục.')) {
+        const res = await ipcRenderer.invoke('db:deleteCustomField', id);
+        if (res.success) {
+            showNotification('Đã xóa trường thành công.', 'success');
+            loadCustomFieldManager();
+        } else {
+            showNotification(res.error, 'danger');
+        }
     }
 }
 
@@ -352,17 +515,23 @@ window.deleteSoldier = async function (id) {
 function loadUnitsForForm() {
     const select = document.querySelector('select[name="don_vi_id"]');
     if (!select) return;
+
+    // Logic to fetch custom fields when unit changes
+    select.addEventListener('change', (e) => {
+        const unitId = e.target.value;
+        const text = select.options[select.selectedIndex]?.text;
+        const hiddenInput = document.getElementById('formUnitName');
+        if (hiddenInput) hiddenInput.value = text;
+
+        // Render custom inputs
+        renderCustomInputsForUnit(unitId);
+    });
+
     const populate = () => {
-        select.innerHTML = '';
+        select.innerHTML = '<option value="" disabled selected>-- Chọn đơn vị --</option>';
         unitsCache.forEach(u => {
             select.innerHTML += `<option value="${u.id}">${u.ten_don_vi}</option>`;
         });
-        select.onchange = () => {
-            const text = select.options[select.selectedIndex]?.text;
-            const hiddenInput = document.getElementById('formUnitName');
-            if (hiddenInput) hiddenInput.value = text;
-        };
-        if (select.options.length > 0) select.onchange();
     };
     if (unitsCache.length === 0) {
         ipcRenderer.invoke('db:getUnits').then(units => {
@@ -372,6 +541,58 @@ function loadUnitsForForm() {
     } else {
         populate();
     }
+}
+
+async function renderCustomInputsForUnit(unitId) {
+    const container = document.getElementById('customFieldsContainer');
+    if (!container) return;
+
+    // Fetch fields
+    const fields = await ipcRenderer.invoke('db:getCustomFields', unitId);
+    customFieldsCache = fields; // Cache for submission
+
+    container.innerHTML = '';
+
+    if (fields.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center text-muted py-3">Không có thông tin bổ sung cho đơn vị này.</div>';
+        return;
+    }
+
+    fields.forEach(f => {
+        let inputHtml = '';
+        const requiredAttr = f.is_required ? 'required' : '';
+        const label = `<label class="form-label">${f.display_name} ${f.is_required ? '<span class="text-danger">*</span>' : ''}</label>`;
+
+        switch (f.data_type) {
+            case 'TEXT':
+                inputHtml = `${label}<input type="text" class="form-control custom-field-input" data-key="${f.field_key}" ${requiredAttr}>`;
+                break;
+            case 'INTEGER':
+                inputHtml = `${label}<input type="number" class="form-control custom-field-input" data-key="${f.field_key}" ${requiredAttr}>`;
+                break;
+            case 'DATE':
+                inputHtml = `${label}<input type="date" class="form-control custom-field-input" data-key="${f.field_key}" ${requiredAttr}>`;
+                break;
+            case 'TEXTAREA':
+                inputHtml = `${label}<textarea class="form-control custom-field-input" rows="3" data-key="${f.field_key}" ${requiredAttr}></textarea>`;
+                break;
+            case 'BOOLEAN':
+                inputHtml = `
+                    <label class="form-label d-block">${f.display_name}</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input custom-field-input" type="radio" name="cf_${f.field_key}" value="1" data-key="${f.field_key}">
+                        <label class="form-check-label">Có</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input custom-field-input" type="radio" name="cf_${f.field_key}" value="0" data-key="${f.field_key}" checked>
+                        <label class="form-check-label">Không</label>
+                    </div>
+                `;
+                break;
+        }
+
+        container.insertAdjacentHTML('beforeend', `<div class="col-md-6">${inputHtml}</div>`);
+    });
 }
 
 // --- VISIBILITY HANDLERS ---
@@ -747,6 +968,19 @@ function setupFormListener(container) {
         data.tai_chinh_suc_khoe = JSON.stringify(finance);
         data.co_vay_no = finance.vay_no.co_khong ? 1 : 0;
 
+        // --- 4. Capture Custom Fields ---
+        const customData = {};
+        const customInputs = container.querySelectorAll('.custom-field-input');
+        customInputs.forEach(input => {
+            const key = input.dataset.key;
+            if (input.type === 'radio') {
+                if (input.checked) customData[key] = input.value;
+            } else {
+                customData[key] = input.value;
+            }
+        });
+        data.custom_data = JSON.stringify(customData);
+
         // Submit
         const res = await ipcRenderer.invoke('db:addSoldier', data);
         if (res.success) {
@@ -756,6 +990,8 @@ function setupFormListener(container) {
                 container.innerHTML = document.getElementById('form-template').innerHTML;
                 setupFormListener(container);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Re-init default for unit (fetch globals)
+                renderCustomInputsForUnit(null);
             } else {
                 switchAdminView('dashboard');
             }

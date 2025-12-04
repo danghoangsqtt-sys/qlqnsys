@@ -489,6 +489,66 @@
         </div>
     </div>
 
+    <!-- ADD/EDIT CUSTOM FIELD MODAL -->
+    <div class="modal fade" id="customFieldModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-military text-white">
+                    <h5 class="modal-title fw-bold" id="customFieldModalTitle">Thêm Trường Dữ Liệu Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="customFieldForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tên Hiển Thị (display_name) <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cfDisplayName" required
+                                placeholder="VD: Phụ cấp thâm niên">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Khóa Dữ Liệu (field_key) <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="cfKey" required
+                                placeholder="VD: phu_cap_tham_nien">
+                            <div class="form-text text-muted">Dùng để lưu trong CSDL. Không chứa dấu cách, chỉ dùng chữ
+                                không dấu và gạch dưới.</div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Kiểu Dữ Liệu (data_type)</label>
+                                <select class="form-select" id="cfType">
+                                    <option value="TEXT">Văn bản ngắn (Text)</option>
+                                    <option value="INTEGER">Số (Integer)</option>
+                                    <option value="DATE">Ngày tháng (Date)</option>
+                                    <option value="BOOLEAN">Có/Không (Yes/No)</option>
+                                    <option value="TEXTAREA">Văn bản dài (Textarea)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Đơn Vị Áp Dụng (unit_id)</label>
+                                <select class="form-select" id="cfUnit">
+                                    <option value="">-- Toàn Hệ Thống --</option>
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="cfRequired">
+                                <label class="form-check-label" for="cfRequired">Bắt buộc nhập (is_required)</label>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-military px-4">Lưu Trường Mới</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ADMIN LAYOUT -->
     <div id="admin-layout" class="container-fluid d-none">
         <div class="row">
@@ -642,11 +702,12 @@
 
                     <!-- Settings View -->
                     <div id="view-settings" class="d-none">
-                        <div class="row justify-content-center">
-                            <div class="col-md-8">
-                                <div class="card shadow-sm border-0 mb-4">
+                        <div class="row justify-content-center g-4">
+                            <!-- Password Change -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm border-0 h-100">
                                     <div class="card-header bg-white fw-bold text-military border-bottom py-3">
-                                        <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU QUẢN TRỊ
+                                        <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU
                                     </div>
                                     <div class="card-body p-4">
                                         <form id="changePasswordForm">
@@ -655,32 +716,25 @@
                                                 <input type="password" class="form-control" id="currentPassword"
                                                     required>
                                             </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label">Mật khẩu mới</label>
-                                                    <input type="password" class="form-control" id="newPassword"
-                                                        required>
-                                                </div>
-                                                <div class="col-md-6 mb-4">
-                                                    <label class="form-label">Xác nhận mật khẩu mới</label>
-                                                    <input type="password" class="form-control" id="confirmNewPassword"
-                                                        required>
-                                                </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Mật khẩu mới</label>
+                                                <input type="password" class="form-control" id="newPassword" required>
                                             </div>
-                                            <div class="d-flex justify-content-end align-items-center">
-                                                <button type="submit" class="btn btn-military px-4">
-                                                    <i class="bi bi-save me-2"></i>Cập nhật mật khẩu
+                                            <div class="mb-4">
+                                                <label class="form-label">Xác nhận lại</label>
+                                                <input type="password" class="form-control" id="confirmNewPassword"
+                                                    required>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-military">
+                                                    Cập nhật mật khẩu
                                                 </button>
                                             </div>
                                         </form>
                                     </div>
                                 </div>
-
-                                <div class="text-center text-muted mt-4">
-                                    <small>QLQN SYSTEM - Phiên bản 2.3.0</small><br>
-                                    <small>Phát triển bởi DHsystem</small>
-                                </div>
                             </div>
+                            <!-- NOTE: Custom Field Manager moved to Tab 8 of Form as requested -->
                         </div>
                     </div>
 
@@ -718,19 +772,21 @@
             <!-- HEAD TABS -->
             <ul class="nav nav-tabs mb-4" id="formTabs" role="tablist">
                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info"
-                        type="button">1. Thông tin chung</button></li>
+                        type="button">1. Thông Tin Chung</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bio"
-                        type="button">2. Tiểu sử cá nhân và mạng xã hội</button></li>
+                        type="button">2. Tiểu Sử & MXH</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-family"
-                        type="button">3. Gia đình và hôn nhân</button></li>
+                        type="button">3. Gia Đình & Hôn Nhân</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-foreign"
-                        type="button">4. Yếu tố nước ngoài</button></li>
+                        type="button">4. Yếu Tố Nước Ngoài</button></li>
                 <li class="nav-item"><button class="nav-link text-danger fw-bold" data-bs-toggle="tab"
-                        data-bs-target="#tab-history" type="button">5. Lịch sử hoạt động xã hội</button></li>
+                        data-bs-target="#tab-history" type="button">5. Lịch Sử & Tệ Nạn</button></li>
                 <li class="nav-item"><button class="nav-link text-danger fw-bold" data-bs-toggle="tab"
-                        data-bs-target="#tab-finance" type="button">6. Tài chính và sức khỏe</button></li>
+                        data-bs-target="#tab-finance" type="button">6. Tài Chính & Sức Khỏe</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-aspirations"
-                        type="button">7. Cam kết và nguyện vọng</button></li>
+                        type="button">7. Cam Kết & Nguyện Vọng</button></li>
+                <li class="nav-item"><button class="nav-link text-primary" data-bs-toggle="tab"
+                        data-bs-target="#tab-custom" type="button">8. Thông tin bổ sung</button></li>
             </ul>
 
             <div class="tab-content" id="formTabsContent">
@@ -826,7 +882,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Đơn vị <span class="text-danger">*</span></label>
-                            <select class="form-select" name="don_vi_id" required></select>
+                            <select class="form-select" name="don_vi_id" id="formUnitSelect" required></select>
                             <input type="hidden" name="don_vi" id="formUnitName">
                         </div>
                         <div class="col-md-2">
@@ -1422,6 +1478,49 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- TAB 8: CUSTOM FIELDS (NEW) -->
+                <div class="tab-pane fade" id="tab-custom" role="tabpanel">
+                    <div class="section-title"><i class="bi bi-ui-checks-grid me-2"></i>Thông tin bổ sung</div>
+                    <div class="alert alert-light border small"><i class="bi bi-info-circle me-1"></i> Các trường dữ
+                        liệu này được yêu cầu thêm bởi đơn vị.</div>
+                    <div id="customFieldsContainer" class="row g-3">
+                        <!-- Dynamic fields injected here -->
+                    </div>
+
+                    <!-- ADMIN CUSTOM FIELD MANAGER (MOVED HERE) -->
+                    <div id="admin-custom-field-manager" class="d-none mt-5 border-top pt-4 admin-only-section">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-military m-0"><i class="bi bi-gear-fill me-2"></i>Quản Lý Cấu Hình
+                                Trường Tùy Chỉnh (Admin)</h6>
+                            <button type="button" class="btn btn-sm btn-military" onclick="openCustomFieldModal('add')">
+                                <i class="bi bi-plus-lg me-1"></i>Thêm Trường Dữ Liệu Mới
+                            </button>
+                        </div>
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                    <table class="table table-striped table-hover mb-0 align-middle"
+                                        style="font-size: 0.9rem;">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th>Tên Hiển Thị</th>
+                                                <th>Key</th>
+                                                <th>Kiểu</th>
+                                                <th>Đơn Vị</th>
+                                                <th class="text-end">Thao Tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="customFieldTableBody">
+                                            <!-- Loaded via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="d-grid mt-5 pb-5">

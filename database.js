@@ -1,3 +1,4 @@
+
 const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
@@ -54,13 +55,25 @@ class SoldierDB {
       )
     `);
 
+    // 3. Custom Fields Table (New)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS custom_fields (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        unit_id INTEGER, -- NULL for global fields
+        field_key TEXT UNIQUE NOT NULL,
+        display_name TEXT NOT NULL,
+        data_type TEXT NOT NULL, -- TEXT, INTEGER, DATE, BOOLEAN, TEXTAREA
+        is_required INTEGER DEFAULT 0
+      )
+    `);
+
     // Seed default Unit if empty
     const unitCount = this.db.prepare('SELECT count(*) as count FROM units').get();
     if (unitCount.count === 0) {
       this.db.prepare("INSERT INTO units (ten_don_vi) VALUES ('Đại đội 1')").run();
     }
 
-    // 3. MIGRATION: Add new columns safely (including JSON columns)
+    // 4. MIGRATION: Add new columns safely (including JSON columns)
     const newColumns = [
       // Basic Text Info
       'anh_dai_dien TEXT',
@@ -79,16 +92,19 @@ class SoldierDB {
       'co_danh_bac INTEGER DEFAULT 0',
 
       // JSON Data Columns
-      'hoan_canh_song TEXT', // JSON: song_chung_voi, nguoi_nuoi_duong, ly_do... (Sửa lỗi cú pháp)
-      'mang_xa_hoi TEXT', // JSON: facebook, zalo, tiktok arrays (Sửa lỗi cú pháp)
-      'tieu_su_ban_than TEXT', // JSON: Array of timeline (Sửa lỗi cú pháp)
-      'quan_he_gia_dinh TEXT', // JSON: vo, con, nguoi_yeu, cha_me_anh_em (Sửa lỗi cú pháp)
-      'thong_tin_gia_dinh_chung TEXT', // JSON: kinh_te, vi_pham_nguoi_than... (Sửa lỗi cú pháp)
-      'yeu_to_nuoc_ngoai TEXT', // JSON: than_nhan, di_nuoc_ngoai, ho_chieu, xuat_canh (Sửa lỗi cú pháp)
-      'lich_su_vi_pham TEXT', // JSON: dia_phuong, danh_bac, ma_tuy (Sửa lỗi cú pháp)
-      'tai_chinh_suc_khoe TEXT', // JSON: vay_no, kinh_doanh, covid (Sửa lỗi cú pháp)
-      'nang_khieu_so_truong TEXT', // Textarea (Sửa lỗi cú pháp)
-      'vi_pham_nuoc_ngoai TEXT'     // Textarea (Sửa lỗi cú pháp)
+      'hoan_canh_song TEXT', //--JSON: song_chung_voi, nguoi_nuoi_duong, ly_do...
+      'mang_xa_hoi TEXT', //--JSON: facebook, zalo, tiktok arrays
+      'tieu_su_ban_than TEXT', //--JSON: Array of timeline
+      'quan_he_gia_dinh TEXT', //--JSON: vo, con, nguoi_yeu, cha_me_anh_em
+      'thong_tin_gia_dinh_chung TEXT', //--JSON: kinh_te, vi_pham_nguoi_than...
+      'yeu_to_nuoc_ngoai TEXT', //--JSON: than_nhan, di_nuoc_ngoai, ho_chieu, xuat_canh
+      'lich_su_vi_pham TEXT', //--JSON: dia_phuong, danh_bac, ma_tuy
+      'tai_chinh_suc_khoe TEXT', //--JSON: vay_no, kinh_doanh, covid
+      'nang_khieu_so_truong TEXT', //--Textarea
+      'vi_pham_nuoc_ngoai TEXT', //--Textarea
+
+      // NEW: Custom Fields Data
+      'custom_data TEXT'            //-- JSON: Key - Value storage for dynamic fields
     ];
 
     newColumns.forEach(colDef => {
@@ -119,6 +135,52 @@ class SoldierDB {
     const soldierCount = this.db.prepare('SELECT count(*) as count FROM soldiers WHERE don_vi_id = ?').get(id);
     if (soldierCount.count > 0) throw new Error('Đơn vị đang có người, không thể xóa.');
     return this.db.prepare('DELETE FROM units WHERE id = ?').run(id);
+  }
+
+  // --- CUSTOM FIELDS ---
+  getCustomFields(unitId = null) {
+    // If unitId is provided, get Global fields (unit_id IS NULL) AND fields for that unit
+    // If unitId is 'all' or null, just get all (for admin view) or global
+    if (unitId === 'all') {
+      return this.db.prepare('SELECT * FROM custom_fields ORDER BY id ASC').all();
+    }
+
+    let query = 'SELECT * FROM custom_fields WHERE unit_id IS NULL';
+    const params = [];
+
+    if (unitId) {
+      query += ' OR unit_id = ?';
+      params.push(unitId);
+    }
+
+    return this.db.prepare(query).all(...params);
+  }
+
+  addCustomField(data) {
+    // data: { unit_id, field_key, display_name, data_type, is_required }
+    const stmt = this.db.prepare(`
+        INSERT INTO custom_fields (unit_id, field_key, display_name, data_type, is_required)
+        VALUES (@unit_id, @field_key, @display_name, @data_type, @is_required)
+    `);
+    return stmt.run(data);
+  }
+
+  updateCustomField(id, data) {
+    const stmt = this.db.prepare(`
+        UPDATE custom_fields 
+        SET unit_id = @unit_id, 
+            display_name = @display_name, 
+            data_type = @data_type, 
+            is_required = @is_required
+        WHERE id = @id
+    `);
+    // Note: field_key is typically not updated to preserve data integrity, 
+    // or if updated, needs careful handling. Here we skip updating field_key.
+    return stmt.run({ ...data, id });
+  }
+
+  deleteCustomField(id) {
+    return this.db.prepare('DELETE FROM custom_fields WHERE id = ?').run(id);
   }
 
   // --- SOLDIERS ---

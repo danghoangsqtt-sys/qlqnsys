@@ -59,7 +59,44 @@ ipcMain.handle('db:deleteUnit', (event, id) => {
   }
 });
 
-// 2. Soldiers
+// 2. Custom Fields (NEW)
+ipcMain.handle('db:getCustomFields', (event, unitId) => {
+  try {
+    return db.getCustomFields(unitId);
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+});
+
+ipcMain.handle('db:addCustomField', (event, data) => {
+  try {
+    db.addCustomField(data);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('db:updateCustomField', (event, { id, data }) => {
+  try {
+    db.updateCustomField(id, data);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('db:deleteCustomField', (event, id) => {
+  try {
+    db.deleteCustomField(id);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 3. Soldiers
 ipcMain.handle('db:getSoldiers', (event, filter) => {
   try {
     return db.getSoldiers(filter);
@@ -88,7 +125,7 @@ ipcMain.handle('db:deleteSoldier', (event, id) => {
   }
 });
 
-// 3. Image Handling
+// 4. Image Handling
 ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
   try {
     if (!sourcePath) return null;
@@ -114,7 +151,7 @@ ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
   }
 });
 
-// 4. Export PDF
+// 5. Export PDF
 ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   try {
     const soldier = db.getSoldierById(soldierId);

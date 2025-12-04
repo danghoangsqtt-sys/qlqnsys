@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hồ Sơ Chiến Sĩ</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { height: 100vh; overflow: hidden; background-color: #f8f9fa; }
+        .sidebar { height: 100vh; background-color: #2c3e50; color: white; padding-top: 20px; }
+        .sidebar .nav-link { color: #bdc3c7; margin-bottom: 5px; }
+        .sidebar .nav-link.active { background-color: #1abc9c; color: white; }
+        .main-content { height: 100vh; overflow-y: auto; padding: 20px; }
+        .form-section-title { border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-bottom: 15px; color: #16a085; }
+        .sensitive-field { border-color: #e74c3c; }
+        .table-action-btn { margin-right: 5px; }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar">
+            <h4 class="text-center mb-4">QL Hồ Sơ</h4>
+            <ul class="nav flex-column nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" id="nav-list" onclick="switchView('list')">Danh Sách</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="nav-add" onclick="switchView('add')">Nhập Liệu Mới</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 main-content">
+            
+            <!-- LIST VIEW -->
+            <div id="view-list">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Danh Sách Chiến Sĩ</h2>
+                    <div class="d-flex gap-2">
+                        <select id="filterDropdown" class="form-select w-auto">
+                            <option value="all">Tất cả</option>
+                            <option value="dang_vien">Đảng Viên</option>
+                            <option value="vay_no">Có Vay Nợ</option>
+                            <option value="ma_tuy">Tiền sự Ma Túy</option>
+                            <option value="gia_dinh_kho_khan">Hoàn cảnh Khó khăn</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadSoldiers()">Làm mới</button>
+                    </div>
+                </div>
+                <div class="table-responsive bg-white rounded shadow-sm p-2">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Họ Tên</th>
+                                <th>Cấp Bậc</th>
+                                <th>Đơn Vị</th>
+                                <th>Năm Sinh</th>
+                                <th>Cảnh Báo</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="soldierTableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ADD/EDIT VIEW -->
+            <div id="view-add" style="display: none;">
+                <h2 class="mb-3">Hồ Sơ Chiến Sĩ</h2>
+                <form id="soldierForm">
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="formTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab1-tab" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab">Thông Tin Chung</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab2-tab" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab">Liên Lạc & MXH</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab3-tab" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab">Gia Đình</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link text-danger" id="tab4-tab" data-bs-toggle="tab" data-bs-target="#tab4" type="button" role="tab">Tư Tưởng & Chính Trị</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content bg-white p-4 border border-top-0 rounded-bottom shadow-sm">
+                        
+                        <!-- Tab 1: Identity -->
+                        <div class="tab-pane fade show active" id="tab1" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Họ và Tên</label>
+                                    <input type="text" class="form-control" name="ho_ten" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tên Khác</label>
+                                    <input type="text" class="form-control" name="ten_khac">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Ngày Sinh</label>
+                                    <input type="date" class="form-control" name="ngay_sinh">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Số CCCD</label>
+                                    <input type="text" class="form-control" name="cccd">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Cấp Bậc</label>
+                                    <select class="form-select" name="cap_bac">
+                                        <option value="Binh nhì">Binh nhì</option>
+                                        <option value="Binh nhất">Binh nhất</option>
+                                        <option value="Hạ sĩ">Hạ sĩ</option>
+                                        <option value="Trung sĩ">Trung sĩ</option>
+                                        <option value="Thượng sĩ">Thượng sĩ</option>
+                                        <option value="Thiếu úy">Thiếu úy</option>
+                                        <option value="Trung úy">Trung úy</option>
+                                        <option value="Thượng úy">Thượng úy</option>
+                                        <option value="Đại úy">Đại úy</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Đơn Vị</label>
+                                    <input type="text" class="form-control" name="don_vi">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày Nhập Ngũ</label>
+                                    <input type="date" class="form-control" name="nhap_ngu_ngay">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày Vào Đảng</label>
+                                    <input type="date" class="form-control" name="vao_dang_ngay">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Social -->
+                        <div class="tab-pane fade" id="tab2" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SĐT Riêng</label>
+                                    <input type="text" class="form-control sensitive-field" name="sdt_rieng">
+                                </div>
+                                <div class="col-md-6"></div> <!-- Spacer -->
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Tên Facebook</label>
+                                    <input type="text" class="form-control" name="tk_facebook">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SĐT ĐK Facebook</label>
+                                    <input type="text" class="form-control" name="sdt_facebook">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Tên Zalo</label>
+                                    <input type="text" class="form-control" name="tk_zalo">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SĐT ĐK Zalo</label>
+                                    <input type="text" class="form-control" name="sdt_zalo">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">TikTok ID</label>
+                                    <input type="text" class="form-control" name="tk_tiktok">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Family -->
+                        <div class="tab-pane fade" id="tab3" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Họ tên Bố</label>
+                                    <input type="text" class="form-control" name="ho_ten_bo">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Họ tên Mẹ</label>
+                                    <input type="text" class="form-control" name="ho_ten_me">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Vợ/Chồng</label>
+                                    <input type="text" class="form-control" name="vo_chong">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Con cái</label>
+                                    <input type="text" class="form-control" name="con_cai">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Hoàn cảnh gia đình</label>
+                                    <select class="form-select" name="hoan_canh_gia_dinh">
+                                        <option value="Bình thường">Bình thường</option>
+                                        <option value="Khó khăn">Khó khăn</option>
+                                        <option value="Đặc biệt khó khăn">Đặc biệt khó khăn</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Background (Sensitive) -->
+                        <div class="tab-pane fade" id="tab4" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label text-danger fw-bold">Tiền án / Tiền sự</label>
+                                    <textarea class="form-control" name="tien_an_tien_su" rows="2"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Tiền sử bệnh lý</label>
+                                    <textarea class="form-control" name="tien_su_benh" rows="2"></textarea>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label">Vay nợ?</label>
+                                    <select class="form-select" name="vay_no" id="vay_no_select">
+                                        <option value="0">Không</option>
+                                        <option value="1">Có</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Chi tiết vay nợ</label>
+                                    <input type="text" class="form-control" name="chi_tiet_vay_no" placeholder="Số tiền, chủ nợ...">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label text-danger">Sử dụng ma túy?</label>
+                                    <select class="form-select" name="su_dung_ma_tuy">
+                                        <option value="0">Không</option>
+                                        <option value="1">Có</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-danger">Tham gia đánh bạc?</label>
+                                    <select class="form-select" name="tham_gia_danh_bac">
+                                        <option value="0">Không</option>
+                                        <option value="1">Có</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button type="button" class="btn btn-secondary" onclick="switchView('list')">Hủy</button>
+                        <button type="submit" class="btn btn-success px-4">Lưu Hồ Sơ</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Renderer Logic -->
+<script src="renderer.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

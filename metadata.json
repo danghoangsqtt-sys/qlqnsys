@@ -1,0 +1,5 @@
+{
+  "name": "QuanLyHoSoChienSi",
+  "description": "Desktop application for managing soldier profiles using Electron, SQLite, and PDF export.",
+  "requestFramePermissions": []
+}

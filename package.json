@@ -1,0 +1,17 @@
+{
+  "name": "quan-ly-ho-so-chien-si",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.0.0",
+    "bootstrap": "^5.3.0",
+    "pdf-lib": "^1.17.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

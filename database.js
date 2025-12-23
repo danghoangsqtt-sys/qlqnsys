@@ -1,4 +1,7 @@
 
+
+
+
 const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
@@ -194,16 +197,44 @@ class SoldierDB {
     return stmt.run(data);
   }
 
+  updateSoldier(id, data) {
+    // Dynamic Update
+    const keys = Object.keys(data);
+    const setClause = keys.map(k => `${k} = @${k}`).join(', ');
+    
+    // We pass id as well for the WHERE clause
+    const stmt = this.db.prepare(`UPDATE soldiers SET ${setClause} WHERE id = @id`);
+    return stmt.run({ ...data, id });
+  }
+
   getSoldiers(filter) {
     let query = 'SELECT * FROM soldiers WHERE 1=1';
     const params = [];
 
+    // Detailed Filtering Logic
     if (filter.type === 'dang_vien') {
       query += " AND vao_dang_ngay IS NOT NULL AND vao_dang_ngay != ''";
+    } else if (filter.type === 'doan_vien') {
+      query += " AND ngay_vao_doan IS NOT NULL AND ngay_vao_doan != ''";
+    } else if (filter.type === 'da_tn') {
+      query += ' AND da_tot_nghiep = 1';
+    } else if (filter.type === 'chua_tn') {
+      query += ' AND da_tot_nghiep = 0';
     } else if (filter.type === 'vay_no') {
       query += ' AND co_vay_no = 1';
     } else if (filter.type === 'ma_tuy') {
       query += ' AND co_ma_tuy = 1';
+    } else if (filter.type === 'danh_bac') {
+      query += ' AND co_danh_bac = 1';
+    } else if (filter.type === 'canh_bao') {
+      query += ' AND (co_vay_no = 1 OR co_ma_tuy = 1 OR co_danh_bac = 1)';
+    }
+    
+    // Global Search Logic (ho_ten or cccd)
+    if (filter.keyword && filter.keyword.trim() !== '') {
+        const keyword = '%' + filter.keyword.trim() + '%';
+        query += ' AND (ho_ten LIKE ? OR cccd LIKE ?)';
+        params.push(keyword, keyword);
     }
 
     if (filter.unitId && filter.unitId !== 'all') {

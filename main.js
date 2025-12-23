@@ -5,6 +5,10 @@ const fs = require('fs');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const SoldierDB = require('./database');
 
+// THIẾT LẬP QUAN TRỌNG: Buộc Chromium sử dụng locale Tiếng Việt ngay từ lúc khởi động
+// Điều này sẽ thay đổi định dạng input date thành dd/mm/yyyy
+app.commandLine.appendSwitch('lang', 'vi-VN');
+
 const db = new SoldierDB();
 let mainWindow;
 
@@ -14,8 +18,10 @@ function createWindow() {
     height: 900,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false // allow loading local resources (images)
+      contextIsolation: false, 
+      webSecurity: false,
+      // Đảm bảo môi trường render cũng nhận diện ngôn ngữ vi
+      spellcheck: false
     },
   });
 
@@ -38,62 +44,62 @@ app.on('window-all-closed', () => {
 
 // 1. Units
 ipcMain.handle('db:getUnits', () => {
-  return db.getUnits();
+    return db.getUnits();
 });
 
 ipcMain.handle('db:addUnit', (event, { name, parentId }) => {
-  try {
-    db.addUnit(name, parentId);
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        db.addUnit(name, parentId);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 ipcMain.handle('db:deleteUnit', (event, id) => {
-  try {
-    db.deleteUnit(id);
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        db.deleteUnit(id);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 // 2. Custom Fields (NEW)
 ipcMain.handle('db:getCustomFields', (event, unitId) => {
-  try {
-    return db.getCustomFields(unitId);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+    try {
+        return db.getCustomFields(unitId);
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
 });
 
 ipcMain.handle('db:addCustomField', (event, data) => {
-  try {
-    db.addCustomField(data);
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        db.addCustomField(data);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 ipcMain.handle('db:updateCustomField', (event, { id, data }) => {
-  try {
-    db.updateCustomField(id, data);
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        db.updateCustomField(id, data);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 ipcMain.handle('db:deleteCustomField', (event, id) => {
-  try {
-    db.deleteCustomField(id);
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        db.deleteCustomField(id);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
 
 // 3. Soldiers
@@ -106,12 +112,32 @@ ipcMain.handle('db:getSoldiers', (event, filter) => {
   }
 });
 
+// NEW: Get Single Soldier
+ipcMain.handle('db:getSoldier', (event, id) => {
+  try {
+    return db.getSoldierById(id);
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+});
+
 ipcMain.handle('db:addSoldier', (event, data) => {
   try {
     const result = db.addSoldier(data);
     return { success: true, id: result.lastInsertRowid };
   } catch (err) {
     console.error(err);
+    return { success: false, error: err.message };
+  }
+});
+
+// NEW: Update Soldier
+ipcMain.handle('db:updateSoldier', (event, { id, data }) => {
+  try {
+    db.updateSoldier(id, data);
+    return { success: true };
+  } catch (err) {
     return { success: false, error: err.message };
   }
 });
@@ -127,31 +153,31 @@ ipcMain.handle('db:deleteSoldier', (event, id) => {
 
 // 4. Image Handling
 ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
-  try {
-    if (!sourcePath) return null;
+    try {
+        if (!sourcePath) return null;
+        
+        const userDataPath = app.getPath('userData');
+        const imagesDir = path.join(userDataPath, 'profile_images');
 
-    const userDataPath = app.getPath('userData');
-    const imagesDir = path.join(userDataPath, 'profile_images');
+        // Create dir if not exists
+        if (!fs.existsSync(imagesDir)) {
+            fs.mkdirSync(imagesDir, { recursive: true });
+        }
 
-    // Create dir if not exists
-    if (!fs.existsSync(imagesDir)) {
-      fs.mkdirSync(imagesDir, { recursive: true });
+        const ext = path.extname(sourcePath);
+        const fileName = `img_${Date.now()}${ext}`;
+        const destPath = path.join(imagesDir, fileName);
+
+        fs.copyFileSync(sourcePath, destPath);
+        
+        return destPath;
+    } catch (err) {
+        console.error("Save Image Error:", err);
+        return null;
     }
-
-    const ext = path.extname(sourcePath);
-    const fileName = `img_${Date.now()}${ext}`;
-    const destPath = path.join(imagesDir, fileName);
-
-    fs.copyFileSync(sourcePath, destPath);
-
-    return destPath;
-  } catch (err) {
-    console.error("Save Image Error:", err);
-    return null;
-  }
 });
 
-// 5. Export PDF
+// 5. Export PDF (Cập nhật Logic xử lý JSON)
 ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   try {
     const soldier = db.getSoldierById(soldierId);
@@ -159,9 +185,9 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
 
     const templatePath = path.join(__dirname, 'assets', 'templates', '1.pdf');
 
-    // Check if template exists
+    // **NEW: Kiểm tra template và trả về lỗi rõ ràng**
     if (!fs.existsSync(templatePath)) {
-      return { success: false, error: "Template file 'assets/templates/1.pdf' not found." };
+      return { success: false, error: "LỖI: Không tìm thấy file template PDF tại đường dẫn 'assets/templates/1.pdf'. Vui lòng thêm file mẫu để chức năng hoạt động." };
     }
 
     const existingPdfBytes = fs.readFileSync(templatePath);
@@ -170,15 +196,20 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
     const firstPage = pages[0];
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Placeholder Coords (Update these based on real PDF)
+    // Xử lý dữ liệu JSON (Chuyển đổi thành chuỗi tóm tắt cho PDF)
+    const vi_pham_obj = JSON.parse(soldier.lich_su_vi_pham || '{}');
+    const viPhamSummary = vi_pham_obj.vi_pham_dia_phuong?.co_khong ? `VP Địa phương: ${vi_pham_obj.vi_pham_dia_phuong.noi_dung}` : 'Không vi phạm tại địa phương.';
+    const custom_data_obj = JSON.parse(soldier.custom_data || '{}');
+    const customSummary = Object.keys(custom_data_obj).length > 0 ? `Đã nhập ${Object.keys(custom_data_obj).length} trường bổ sung.` : 'Không có TT bổ sung.';
+
     const coords = {
       ho_ten: { x: 150, y: 700 },
       ngay_sinh: { x: 150, y: 680 },
       cap_bac: { x: 400, y: 700 },
       don_vi: { x: 150, y: 660 },
       sdt_rieng: { x: 150, y: 640 },
-      hoan_canh_gia_dinh: { x: 150, y: 600 },
-      tien_an_tien_su: { x: 150, y: 550 }
+      lich_su_vi_pham_summary: { x: 150, y: 620 }, 
+      thong_tin_bo_sung_summary: { x: 150, y: 600 } 
     };
 
     const drawText = (text, key) => {
@@ -197,11 +228,11 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
     drawText(soldier.cap_bac, 'cap_bac');
     drawText(soldier.don_vi, 'don_vi');
     drawText(soldier.sdt_rieng, 'sdt_rieng');
-    drawText(soldier.hoan_canh_gia_dinh, 'hoan_canh_gia_dinh');
-    drawText(soldier.tien_an_tien_su, 'tien_an_tien_su');
+    drawText(viPhamSummary, 'lich_su_vi_pham_summary');
+    drawText(customSummary, 'thong_tin_bo_sung_summary');
 
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Lưu Hồ Sơ',
+      title: 'Lưu Hồ Sơ PDF',
       defaultPath: `HoSo_${soldier.ho_ten.replace(/\s+/g, '_')}.pdf`,
       filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
     });
@@ -215,7 +246,49 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
     return { success: false, cancelled: true };
 
   } catch (err) {
-    console.error(err);
+    console.error("Export PDF Error:", err);
     return { success: false, error: err.message };
   }
+});
+
+// **NEW: 6. Export CSV Handler**
+ipcMain.handle('sys:exportUnitsCSV', async () => {
+    try {
+        const units = db.getUnits();
+        
+        // 1. Tạo headers tiếng Việt
+        const headers = ['ID', 'Tên Đơn Vị', 'ID Cấp Trên'];
+        
+        // 2. Định dạng dữ liệu
+        let csvContent = headers.join(',') + '\n';
+        units.forEach(unit => {
+            const row = [
+                unit.id,
+                `"${unit.ten_don_vi.replace(/"/g, '""')}"`, // Xử lý dấu nháy kép
+                unit.cap_tren_id || '' // NULL thành rỗng
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        // 3. Thêm BOM (Byte Order Mark) để Excel nhận diện UTF-8 (tiếng Việt)
+        const BOM = "\uFEFF";
+        const contentWithBOM = BOM + csvContent;
+
+        const { filePath } = await dialog.showSaveDialog(mainWindow, {
+            title: 'Lưu Danh Sách Đơn Vị',
+            defaultPath: 'Danh_Sach_Don_Vi.csv',
+            filters: [{ name: 'CSV Files', extensions: ['csv'] }]
+        });
+
+        if (filePath) {
+            fs.writeFileSync(filePath, contentWithBOM, 'utf8');
+            return { success: true, path: filePath };
+        }
+        
+        return { success: false, cancelled: true };
+
+    } catch (err) {
+        console.error("Export CSV Error:", err);
+        return { success: false, error: err.message };
+    }
 });

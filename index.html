@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -408,6 +409,38 @@
         .sensitive-section {
             border-left: 3px solid #dc3545;
         }
+
+        /* USER GUIDE STYLING */
+        .guide-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .guide-step-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .guide-step-content h6 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .caps-warning {
+            display: none;
+            font-size: 0.75rem;
+            color: #dc3545;
+            margin-top: 4px;
+        }
     </style>
 </head>
 
@@ -421,7 +454,7 @@
             <div class="login-left">
                 <div class="login-left-content">
                     <div class="app-title">QLQN SYSTEM</div>
-                    <h2 class="mb-3">QUẢN LÝ HỒ SƠ<br>CHIẾN SĨ</h2>
+                    <h2 class="mb-3">QUẢN LÝ HỒ SƠ<br>CHIẾI SĨ</h2>
                     <p class="opacity-75">Hệ thống quản lý thông tin quân nhân chuyên nghiệp, bảo mật và hiệu quả.</p>
                     <small class="text-gold mt-4 d-block"><i class="bi bi-shield-check me-2"></i>Phiên bản 2.3.0</small>
                 </div>
@@ -467,16 +500,20 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
                                 <input type="text" class="form-control" id="loginUsername"
-                                    placeholder="Nhập tài khoản (admin)" autocomplete="off">
+                                    placeholder="Nhập tên đăng nhập" autocomplete="off">
                             </div>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-bold">Mật khẩu</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control" id="loginPassword"
-                                    placeholder="Nhập mật khẩu (123456)">
+                                <input type="password" class="form-control password-input" id="loginPassword"
+                                    placeholder="Nhập mật khẩu">
+                                <button class="btn btn-outline-secondary toggle-password" type="button">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
+                            <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
                         </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-military py-2">
@@ -564,16 +601,16 @@
                     </div>
                 </div>
                 <div class="mt-4 d-flex flex-column h-100 pb-4">
-                    <a class="nav-link active" href="#" id="nav-dashboard" onclick="switchAdminView('dashboard')">
+                    <a class="nav-link active" href="#" id="nav-dashboard" onclick="switchAdminView('dashboard')" title="Danh Sách Quân Nhân (Alt + 1)">
                         <i class="bi bi-grid-fill me-3"></i>Danh Sách
                     </a>
-                    <a class="nav-link" href="#" id="nav-units" onclick="switchAdminView('units')">
+                    <a class="nav-link" href="#" id="nav-units" onclick="switchAdminView('units')" title="Quản Lý Tổ Chức (Alt + 2)">
                         <i class="bi bi-diagram-3-fill me-3"></i>Tổ Chức
                     </a>
-                    <a class="nav-link" href="#" id="nav-add-admin" onclick="switchAdminView('add')">
+                    <a class="nav-link" href="#" id="nav-add-admin" onclick="switchAdminView('add')" title="Nhập Liệu Quân Nhân (Alt + 3)">
                         <i class="bi bi-person-plus-fill me-3"></i>Nhập Liệu
                     </a>
-                    <a class="nav-link" href="#" id="nav-settings" onclick="switchAdminView('settings')">
+                    <a class="nav-link" href="#" id="nav-settings" onclick="switchAdminView('settings')" title="Cài Đặt Hệ Thống (Alt + 4)">
                         <i class="bi bi-gear-fill me-3"></i>Cài Đặt
                     </a>
                 </div>
@@ -592,7 +629,7 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <div class="vr mx-2"></div>
-                        <button class="btn btn-outline-danger border-0" onclick="logout()" title="Đăng xuất">
+                        <button class="btn btn-outline-danger border-0" onclick="logout()" title="Đăng xuất (Esc)">
                             <i class="bi bi-box-arrow-right fs-5"></i>
                         </button>
                     </div>
@@ -612,21 +649,39 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="small text-muted mb-1">Lọc trạng thái</label>
+                                        <label class="small text-muted mb-1">Bộ lọc chi tiết</label>
                                         <select id="statusFilter" class="form-select border-light bg-light"
                                             onchange="loadSoldiers()">
                                             <option value="all">Tất cả trạng thái</option>
-                                            <option value="dang_vien">Đảng viên</option>
-                                            <option value="vay_no">Có vay nợ</option>
-                                            <option value="ma_tuy">Tiền sự ma túy</option>
+                                            <optgroup label="Tổ chức Chính trị">
+                                                <option value="dang_vien">Đảng viên</option>
+                                                <option value="doan_vien">Đoàn viên</option>
+                                            </optgroup>
+                                            <optgroup label="Học vấn">
+                                                <option value="da_tn">Đã tốt nghiệp</option>
+                                                <option value="chua_tn">Chưa tốt nghiệp</option>
+                                            </optgroup>
+                                            <optgroup label="An ninh - Kỷ luật">
+                                                <option value="vay_no">Có vay nợ</option>
+                                                <option value="ma_tuy">Tiền sự ma túy</option>
+                                                <option value="danh_bac">Tham gia đánh bạc</option>
+                                                <option value="canh_bao">Cần quan tâm đặc biệt (Tổng hợp)</option>
+                                            </optgroup>
                                         </select>
                                     </div>
-                                    <div class="col-md-6 text-end d-flex align-items-end justify-content-end">
+                                    <div class="col-md-3">
+                                        <label class="small text-muted mb-1">Tìm kiếm (Tên/CCCD) (Alt + S)</label>
+                                        <input type="text" id="globalSearchInput"
+                                            class="form-control border-light bg-light"
+                                            placeholder="Nhập tên hoặc CCCD... (Alt + S)"
+                                            onkeydown="if(event.key === 'Enter') loadSoldiers()">
+                                    </div>
+                                    <div class="col-md-3 text-end d-flex align-items-end justify-content-end">
                                         <button class="btn btn-light text-military border me-2"
-                                            onclick="loadSoldiers()">
+                                            onclick="loadSoldiers()" title="Làm mới danh sách (Alt + R)">
                                             <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
                                         </button>
-                                        <button class="btn btn-military" onclick="switchAdminView('add')">
+                                        <button class="btn btn-military" onclick="switchAdminView('add')" title="Thêm hồ sơ mới (Alt + N)">
                                             <i class="bi bi-plus-lg me-1"></i> Thêm mới
                                         </button>
                                     </div>
@@ -668,6 +723,11 @@
                                 </div>
                             </div>
                             <div class="col-md-8">
+                                <div class="d-flex justify-content-end mb-3">
+                                    <button class="btn btn-gold" onclick="exportUnitsToCSV()">
+                                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Xuất Danh Sách Đơn Vị (CSV)
+                                    </button>
+                                </div>
                                 <div class="card shadow-sm border-0">
                                     <div class="card-header bg-white fw-bold text-military border-bottom py-3">
                                         Thêm Đơn Vị Mới
@@ -702,39 +762,126 @@
 
                     <!-- Settings View -->
                     <div id="view-settings" class="d-none">
-                        <div class="row justify-content-center g-4">
-                            <!-- Password Change -->
-                            <div class="col-md-6">
-                                <div class="card shadow-sm border-0 h-100">
+                        <div class="row g-4">
+                            <!-- Left: Password & Info -->
+                            <div class="col-md-5">
+                                <div class="card shadow-sm border-0 mb-4">
                                     <div class="card-header bg-white fw-bold text-military border-bottom py-3">
-                                        <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU
+                                        <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU QUẢN TRỊ
                                     </div>
                                     <div class="card-body p-4">
                                         <form id="changePasswordForm">
                                             <div class="mb-3">
                                                 <label class="form-label">Mật khẩu hiện tại</label>
-                                                <input type="password" class="form-control" id="currentPassword"
-                                                    required>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control password-input" id="currentPassword" required>
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Mật khẩu mới</label>
-                                                <input type="password" class="form-control" id="newPassword" required>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control password-input" id="newPassword" required>
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Yêu cầu: 8+ ký tự, 1 CHỮ HOA, 1 ký tự đặc biệt.</small>
                                             </div>
                                             <div class="mb-4">
-                                                <label class="form-label">Xác nhận lại</label>
-                                                <input type="password" class="form-control" id="confirmNewPassword"
-                                                    required>
+                                                <label class="form-label">Xác nhận mật khẩu</label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control password-input" id="confirmNewPassword" required>
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
                                             </div>
                                             <div class="d-grid">
-                                                <button type="submit" class="btn btn-military">
-                                                    Cập nhật mật khẩu
-                                                </button>
+                                                <button type="submit" class="btn btn-military">Cập nhật bảo mật</button>
                                             </div>
                                         </form>
                                     </div>
                                 </div>
+
+                                <div class="card shadow-sm border-0 bg-light">
+                                    <div class="card-body p-4 text-center">
+                                        <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                            <i class="bi bi-patch-check-fill text-military fs-2"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-military mb-1">DHsystem 2025</h5>
+                                        <p class="text-muted small mb-0">Phần mềm Quản lý Hồ sơ Quân nhân v3.5.0</p>
+                                        <hr class="my-3 opacity-10">
+                                        <div class="d-flex justify-content-center gap-3">
+                                            <small class="text-secondary"><i class="bi bi-globe me-1"></i>DHsystem</small>
+                                            <small class="text-secondary"><i class="bi bi-envelope me-1"></i>danghoang.sqtt@gmail.com</small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <!-- NOTE: Custom Field Manager moved to Tab 8 of Form as requested -->
+
+                            <!-- Right: User Guide -->
+                            <div class="col-md-7">
+                                <div class="card shadow-sm border-0 h-100">
+                                    <div class="card-header bg-white fw-bold text-military border-bottom py-3 d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-book me-2"></i>HƯỚNG DẪN SỬ DỤNG CHI TIẾT</span>
+                                        <span class="badge bg-military">HDSD-01</span>
+                                    </div>
+                                    <div class="card-body p-4 overflow-auto" style="max-height: 600px;">
+                                        
+                                        <div class="guide-step">
+                                            <div class="guide-step-icon">1</div>
+                                            <div class="guide-step-content">
+                                                <h6>Thiết lập sơ đồ tổ chức (Alt+2)</h6>
+                                                <p class="small text-muted">Truy cập menu <strong>"Tổ chức"</strong> để xây dựng cây đơn vị. Bắt đầu từ đơn vị cấp cao nhất, sau đó thêm các đơn vị trực thuộc. Bạn có thể xóa đơn vị bằng cách click trực tiếp vào tên đơn vị trong cây thư mục (chỉ xóa được khi đơn vị không còn quân nhân).</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="guide-step">
+                                            <div class="guide-step-icon">2</div>
+                                            <div class="guide-step-content">
+                                                <h6>Tùy chỉnh trường dữ liệu (Dynamic Fields)</h6>
+                                                <p class="small text-muted">Vào tab <strong>"8. Thông tin bổ sung"</strong> trong phần Nhập liệu. Tại đây Admin có thể thêm các ô nhập liệu đặc thù cho từng đơn vị (VD: Số quân trang, Phụ cấp...). Các trường này sẽ tự động xuất hiện khi chọn đúng đơn vị tương ứng.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="guide-step">
+                                            <div class="guide-step-icon">3</div>
+                                            <div class="guide-step-content">
+                                                <h6>Quy trình nhập liệu hồ sơ (Alt+3 hoặc Alt+N)</h6>
+                                                <p class="small text-muted">Có 2 cách:
+                                                    <br>• <strong>Admin trực tiếp:</strong> Vào "Nhập liệu" và điền thông tin.
+                                                    <br>• <strong>Chế độ Kiosk:</strong> Cho phép chiến sĩ tự nhập tại máy công cộng. Sau khi lưu, Admin sẽ thấy hồ sơ xuất hiện tại Danh sách.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="guide-step">
+                                            <div class="guide-step-icon">4</div>
+                                            <div class="guide-step-content">
+                                                <h6>Lọc và Tìm kiếm quân nhân (Alt+S)</h6>
+                                                <p class="small text-muted">Sử dụng thanh lọc tại <strong>"Danh sách"</strong> để tìm theo Đơn vị, theo Trạng thái (Đảng viên, vay nợ, ma túy) hoặc tìm kiếm nhanh bằng Họ tên/CCCD.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="guide-step">
+                                            <div class="guide-step-icon">5</div>
+                                            <div class="guide-step-content">
+                                                <h6>Xuất bản hồ sơ (PDF/CSV)</h6>
+                                                <p class="small text-muted">Hệ thống hỗ trợ xuất file PDF theo mẫu quy định (yêu cầu file mẫu tại assets/templates/1.pdf). Danh sách đơn vị cũng có thể xuất ra CSV để quản lý bằng Excel.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-warning border-0 small mt-4">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>LƯU Ý BẢO MẬT:</strong> Tuyệt đối không chia sẻ mật khẩu quản trị. Luôn đăng xuất sau khi sử dụng trên máy tính dùng chung (Sử dụng phím Esc để đăng xuất nhanh).
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -748,8 +895,8 @@
         <div class="kiosk-header-bar">
             <h1 class="fw-bold mb-2">CẬP NHẬT LÝ LỊCH QUÂN NHÂN</h1>
             <p class="opacity-75">Vui lòng điền đầy đủ, chính xác các thông tin dưới đây</p>
-            <button class="btn btn-outline-light btn-sm mt-2" onclick="logout()">
-                <i class="bi bi-arrow-left"></i> Quay lại Đăng nhập
+            <button class="btn btn-outline-light btn-sm mt-2" onclick="logout()" title="Quay lại màn hình đăng nhập (Esc)">
+                <i class="bi bi-arrow-left"></i> Quay lại Đăng nhập (Esc)
             </button>
         </div>
 
@@ -1026,8 +1173,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Mức sống của gia đình</label>
                             <select class="form-select" id="gd_muc_song">
-                                <option value="Nghèo">Nghèo</option>
-                                <option value="Đủ sống" selected>Đủ sống</option>
+                                <option value="Khó khăn">Khó khăn</option>
+                                <option value="Đủ ăn" selected>Đủ ăn</option>
                                 <option value="Khá">Khá</option>
                             </select>
                         </div>
@@ -1524,7 +1671,7 @@
             </div>
 
             <div class="d-grid mt-5 pb-5">
-                <button type="submit" class="btn btn-military btn-lg py-3 fw-bold">
+                <button type="submit" class="btn btn-military btn-lg py-3 fw-bold" title="Lưu lại hồ sơ hiện tại (Ctrl + S)">
                     <i class="bi bi-save me-2"></i>HOÀN THÀNH & LƯU HỒ SƠ
                 </button>
             </div>

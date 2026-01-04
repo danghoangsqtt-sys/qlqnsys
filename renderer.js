@@ -1363,3 +1363,41 @@ function setupFormListener(container) {
         }
     });
 }
+// --- LOGIC QUẢN TRỊ DỮ LIỆU ---
+
+// Hàm sao lưu
+window.backupDatabase = async function() {
+    const res = await ipcRenderer.invoke('sys:backupDB');
+    if (res.success) {
+        showNotification(`Sao lưu thành công! Tệp được lưu tại: ${res.path}`, "success");
+    } else if (res.error) {
+        showNotification(`Lỗi sao lưu: ${res.error}`, "danger");
+    }
+};
+
+// Hàm khôi phục
+window.restoreDatabase = async function() {
+    const isConfirmed = confirm("CẢNH BÁO QUAN TRỌNG:\n\nViệc khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại bằng dữ liệu từ bản sao lưu. Ứng dụng sẽ tự động khởi động lại sau khi hoàn tất.\n\nBạn có chắc chắn muốn tiếp tục không?");
+    
+    if (isConfirmed) {
+        const res = await ipcRenderer.invoke('sys:restoreDB');
+        if (res.error) {
+            showNotification(`Lỗi khôi phục: ${res.error}`, "danger");
+        }
+    }
+};
+
+// Hàm xóa dữ liệu
+window.clearAllData = async function() {
+    const isConfirmed = confirm("CẢNH BÁO NGUY HIỂM:\n\nHành động này sẽ XÓA VĨNH VIỄN toàn bộ hồ sơ quân nhân, đơn vị và các cấu hình đã lưu. Bạn sẽ không thể khôi phục lại dữ liệu này trừ khi có bản sao lưu.\n\nBạn có thực sự muốn xóa sạch dữ liệu không?");
+    
+    if (isConfirmed) {
+        const secondConfirm = confirm("XÁC NHẬN LẦN CUỐI: Tôi đồng ý xóa toàn bộ dữ liệu hệ thống.");
+        if (secondConfirm) {
+            const res = await ipcRenderer.invoke('sys:clearAllData');
+            if (res.error) {
+                showNotification(`Lỗi khi xóa dữ liệu: ${res.error}`, "danger");
+            }
+        }
+    }
+};

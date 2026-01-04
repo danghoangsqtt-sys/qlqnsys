@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -170,21 +171,18 @@ ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
     }
 });
 
-// 5. NÂNG CẤP: Export PDF chi tiết (Sử dụng HTML-to-PDF)
+// 5. Export PDF
 ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   try {
     const s = db.getSoldierById(soldierId);
     if (!s) throw new Error('Không tìm thấy quân nhân');
 
-    // Giải mã toàn bộ dữ liệu JSON từ Database
     const bio = JSON.parse(s.tieu_su_ban_than || '[]');
-    const social = JSON.parse(s.mang_xa_hoi || '{"facebook":[], "zalo":[], "tiktok":[]}');
     const familyRel = JSON.parse(s.quan_he_gia_dinh || '{"cha_me_anh_em":[], "vo":null, "con":[], "nguoi_yeu":[]}');
     const familyGen = JSON.parse(s.thong_tin_gia_dinh_chung || '{}');
     const foreign = JSON.parse(s.yeu_to_nuoc_ngoai || '{}');
     const violations = JSON.parse(s.lich_su_vi_pham || '{}');
     const finance = JSON.parse(s.tai_chinh_suc_khoe || '{}');
-    const customData = JSON.parse(s.custom_data || '{}');
 
     let printWindow = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } });
 
@@ -311,29 +309,63 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   }
 });
 
-// 6. Export CSV Handler
-ipcMain.handle('sys:exportUnitsCSV', async () => {
-    try {
-        const units = db.getUnits();
-        const headers = ['ID', 'Tên Đơn Vị', 'ID Cấp Trên'];
-        let csvContent = headers.join(',') + '\n';
-        units.forEach(unit => {
-            const row = [unit.id, `"${unit.ten_don_vi.replace(/"/g, '""')}"`, unit.cap_tren_id || ''];
-            csvContent += row.join(',') + '\n';
-        });
+// --- 7. QUẢN TRỊ DỮ LIỆU & BẢO TRÌ ---
 
-        const BOM = "\uFEFF"; // Byte Order Mark cho UTF-8 Excel
+// Handler sao lưu dữ liệu
+ipcMain.handle('sys:backupDB', async () => {
+    try {
+        const dbPath = path.join(app.getPath('userData'), 'soldiers.db');
         const { filePath } = await dialog.showSaveDialog(mainWindow, {
-            title: 'Lưu Danh Sách Đơn Vị',
-            defaultPath: 'Danh_Sach_Don_Vi.csv',
-            filters: [{ name: 'CSV Files', extensions: ['csv'] }]
+            title: 'Chọn nơi lưu bản sao lưu',
+            defaultPath: `Backup_QLQN_${new Date().toISOString().slice(0,10)}.db`,
+            filters: [{ name: 'SQLite Database', extensions: ['db'] }]
         });
 
         if (filePath) {
-            fs.writeFileSync(filePath, BOM + csvContent, 'utf8');
+            fs.copyFileSync(dbPath, filePath);
             return { success: true, path: filePath };
         }
         return { success: false, cancelled: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+// Handler khôi phục dữ liệu
+ipcMain.handle('sys:restoreDB', async () => {
+    try {
+        const dbPath = path.join(app.getPath('userData'), 'soldiers.db');
+        const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+            title: 'Chọn tệp tin sao lưu (.db)',
+            filters: [{ name: 'SQLite Database', extensions: ['db'] }],
+            properties: ['openFile']
+        });
+
+        if (filePaths && filePaths.length > 0) {
+            // Sao chép tệp sao lưu đè lên tệp hiện tại
+            fs.copyFileSync(filePaths[0], dbPath);
+            
+            // Tự động khởi động lại ứng dụng để áp dụng dữ liệu mới
+            app.relaunch();
+            app.exit(0);
+            return { success: true };
+        }
+        return { success: false, cancelled: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+// Handler xóa toàn bộ dữ liệu (Khởi tạo lại phần mềm)
+ipcMain.handle('sys:clearAllData', async () => {
+    try {
+        const dbPath = path.join(app.getPath('userData'), 'soldiers.db');
+        if (fs.existsSync(dbPath)) {
+            fs.unlinkSync(dbPath); // Xóa file DB
+        }
+        app.relaunch();
+        app.exit(0);
+        return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
     }

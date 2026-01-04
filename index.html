@@ -762,133 +762,166 @@
 
                     <!-- Settings View -->
                     <div id="view-settings" class="d-none">
-                        <div class="row g-4">
-                            <!-- Left: Password & Info -->
-                            <div class="col-md-5">
-                                <div class="card shadow-sm border-0 mb-4">
-                                    <div class="card-header bg-white fw-bold text-military border-bottom py-3">
-                                        <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU QUẢN TRỊ
-                                    </div>
-                                    <div class="card-body p-4">
-                                        <form id="changePasswordForm">
-                                            <div class="mb-3">
-                                                <label class="form-label">Mật khẩu hiện tại</label>
-                                                <div class="input-group">
-                                                    <input type="password" class="form-control password-input" id="currentPassword" required>
-                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Mật khẩu mới</label>
-                                                <div class="input-group">
-                                                    <input type="password" class="form-control password-input" id="newPassword" required>
-                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
-                                                <small class="text-muted" style="font-size: 0.75rem;">Yêu cầu: 8+ ký tự, 1 CHỮ HOA, 1 ký tự đặc biệt.</small>
-                                            </div>
-                                            <div class="mb-4">
-                                                <label class="form-label">Xác nhận mật khẩu</label>
-                                                <div class="input-group">
-                                                    <input type="password" class="form-control password-input" id="confirmNewPassword" required>
-                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
-                                            </div>
-                                            <div class="d-grid">
-                                                <button type="submit" class="btn btn-military">Cập nhật bảo mật</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                <div class="card shadow-sm border-0 bg-light">
-                                    <div class="card-body p-4 text-center">
-                                        <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                            <i class="bi bi-patch-check-fill text-military fs-2"></i>
-                                        </div>
-                                        <h5 class="fw-bold text-military mb-1">DHsystem 2025</h5>
-                                        <p class="text-muted small mb-0">Phần mềm Quản lý Hồ sơ Quân nhân v3.5.0</p>
-                                        <hr class="my-3 opacity-10">
-                                        <div class="d-flex justify-content-center gap-3">
-                                            <small class="text-secondary"><i class="bi bi-globe me-1"></i>DHsystem</small>
-                                            <small class="text-secondary"><i class="bi bi-envelope me-1"></i>danghoang.sqtt@gmail.com</small>
-                                        </div>
-                                    </div>
-                                </div>
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold text-military border-bottom py-3">
+                    <i class="bi bi-shield-lock me-2"></i>ĐỔI MẬT KHẨU QUẢN TRỊ
+                </div>
+                <div class="card-body p-4">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu hiện tại</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control password-input" id="currentPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
-
-                            <!-- Right: User Guide -->
-                            <div class="col-md-7">
-                                <div class="card shadow-sm border-0 h-100">
-                                    <div class="card-header bg-white fw-bold text-military border-bottom py-3 d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-book me-2"></i>HƯỚNG DẪN SỬ DỤNG CHI TIẾT</span>
-                                        <span class="badge bg-military">HDSD-01</span>
-                                    </div>
-                                    <div class="card-body p-4 overflow-auto" style="max-height: 600px;">
-                                        
-                                        <div class="guide-step">
-                                            <div class="guide-step-icon">1</div>
-                                            <div class="guide-step-content">
-                                                <h6>Thiết lập sơ đồ tổ chức (Alt+2)</h6>
-                                                <p class="small text-muted">Truy cập menu <strong>"Tổ chức"</strong> để xây dựng cây đơn vị. Bắt đầu từ đơn vị cấp cao nhất, sau đó thêm các đơn vị trực thuộc. Bạn có thể xóa đơn vị bằng cách click trực tiếp vào tên đơn vị trong cây thư mục (chỉ xóa được khi đơn vị không còn quân nhân).</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="guide-step">
-                                            <div class="guide-step-icon">2</div>
-                                            <div class="guide-step-content">
-                                                <h6>Tùy chỉnh trường dữ liệu (Dynamic Fields)</h6>
-                                                <p class="small text-muted">Vào tab <strong>"8. Thông tin bổ sung"</strong> trong phần Nhập liệu. Tại đây Admin có thể thêm các ô nhập liệu đặc thù cho từng đơn vị (VD: Số quân trang, Phụ cấp...). Các trường này sẽ tự động xuất hiện khi chọn đúng đơn vị tương ứng.</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="guide-step">
-                                            <div class="guide-step-icon">3</div>
-                                            <div class="guide-step-content">
-                                                <h6>Quy trình nhập liệu hồ sơ (Alt+3 hoặc Alt+N)</h6>
-                                                <p class="small text-muted">Có 2 cách:
-                                                    <br>• <strong>Admin trực tiếp:</strong> Vào "Nhập liệu" và điền thông tin.
-                                                    <br>• <strong>Chế độ Kiosk:</strong> Cho phép chiến sĩ tự nhập tại máy công cộng. Sau khi lưu, Admin sẽ thấy hồ sơ xuất hiện tại Danh sách.</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="guide-step">
-                                            <div class="guide-step-icon">4</div>
-                                            <div class="guide-step-content">
-                                                <h6>Lọc và Tìm kiếm quân nhân (Alt+S)</h6>
-                                                <p class="small text-muted">Sử dụng thanh lọc tại <strong>"Danh sách"</strong> để tìm theo Đơn vị, theo Trạng thái (Đảng viên, vay nợ, ma túy) hoặc tìm kiếm nhanh bằng Họ tên/CCCD.</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="guide-step">
-                                            <div class="guide-step-icon">5</div>
-                                            <div class="guide-step-content">
-                                                <h6>Xuất bản hồ sơ (PDF/CSV)</h6>
-                                                <p class="small text-muted">Hệ thống hỗ trợ xuất file PDF theo mẫu quy định (yêu cầu file mẫu tại assets/templates/1.pdf). Danh sách đơn vị cũng có thể xuất ra CSV để quản lý bằng Excel.</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="alert alert-warning border-0 small mt-4">
-                                            <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>LƯU Ý BẢO MẬT:</strong> Tuyệt đối không chia sẻ mật khẩu quản trị. Luôn đăng xuất sau khi sử dụng trên máy tính dùng chung (Sử dụng phím Esc để đăng xuất nhanh).
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control password-input" id="newPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Yêu cầu: 8+ ký tự, 1 CHỮ HOA, 1 ký tự đặc biệt.</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Xác nhận mật khẩu</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control password-input" id="confirmNewPassword" required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="caps-warning"><i class="bi bi-capslock-fill"></i> Đang bật Caps Lock!</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-military">Cập nhật bảo mật</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
+            <div class="card shadow-sm border-0 mb-4 border-start border-4 border-warning">
+                <div class="card-header bg-white fw-bold text-military border-bottom py-3">
+                    <i class="bi bi-database-fill-gear me-2 text-warning"></i>QUẢN TRỊ DỮ LIỆU & BẢO TRÌ
+                </div>
+                <div class="card-body p-4">
+                    <p class="small text-muted mb-4">Quản lý tệp tin cơ sở dữ liệu. Vui lòng sao lưu định kỳ để tránh mất dữ liệu.</p>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-light border text-start py-2" onclick="backupDatabase()">
+                            <i class="bi bi-cloud-arrow-up-fill me-2 text-primary"></i> <b>Sao lưu toàn bộ</b>
+                            <small class="d-block text-muted">Xuất tệp tin .db để lưu trữ an toàn</small>
+                        </button>
+                        
+                        <button class="btn btn-light border text-start py-2" onclick="restoreDatabase()">
+                            <i class="bi bi-cloud-arrow-down-fill me-2 text-success"></i> <b>Khôi phục từ tệp</b>
+                            <small class="d-block text-muted">Ghi đè dữ liệu từ bản sao lưu cũ</small>
+                        </button>
+                        
+                        <hr class="my-2">
+                        
+                        <button class="btn btn-outline-danger text-start border-dashed py-2" onclick="clearAllData()">
+                            <i class="bi bi-trash3-fill me-2"></i> <b>Xóa toàn bộ dữ liệu</b>
+                            <small class="d-block opacity-75">Xóa sạch Database và khởi động lại</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-4 text-center">
+                    <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-patch-check-fill text-military fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-military mb-1">DHsystem 2026</h5>
+                    <p class="text-muted small mb-0">Phần mềm Quản lý Hồ sơ Quân nhân v3.6.0</p>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-white fw-bold text-military border-bottom py-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-book-half me-2"></i>HƯỚNG DẪN VẬN HÀNH HỆ THỐNG</span>
+        <span class="badge bg-military">Phiên bản 2026</span>
     </div>
+    <div class="card-body p-4 overflow-auto" style="max-height: 700px;">
+        
+        <div class="guide-step">
+            <div class="guide-step-icon">1</div>
+            <div class="guide-step-content">
+                <h6>Thiết lập Sơ đồ tổ chức (Alt + 2)</h6>
+                <p class="small text-muted">Truy cập menu <strong>"Tổ chức"</strong>. Bạn cần tạo các đơn vị từ cấp cao nhất (VD: Tiểu đoàn) rồi mới tạo các đơn vị trực thuộc (VD: Đại đội, Trung đội). Click trực tiếp vào tên đơn vị trong cây thư mục để thực hiện lệnh xóa.</p>
+            </div>
+        </div>
+
+        <div class="guide-step">
+            <div class="guide-step-icon">2</div>
+            <div class="guide-step-content">
+                <h6>Cấu hình Trường tùy chỉnh (Dynamic Fields)</h6>
+                <p class="small text-muted">Trong phần <strong>"Nhập liệu" -> "8. Thông tin bổ sung"</strong>, Admin có thể tạo thêm các ô nhập liệu đặc thù. Ví dụ: "Số súng", "Cỡ quân trang". Các trường này sẽ tự động xuất hiện khi bạn chọn đúng đơn vị đã cấu hình.</p>
+            </div>
+        </div>
+
+        <div class="guide-step">
+            <div class="guide-step-icon">3</div>
+            <div class="guide-step-content">
+                <h6>Quy trình Nhập liệu (Alt + 3 hoặc Alt + N)</h6>
+                <p class="small text-muted">Hệ thống hỗ trợ 02 chế độ:
+                    <br>• <b>Chế độ Chỉ huy:</b> Admin trực tiếp nhập và duyệt hồ sơ.
+                    <br>• <b>Chế độ Kiosk:</b> Cho phép chiến sĩ tự nhập thông tin tại máy công cộng. Sau khi lưu, hồ sơ sẽ tự động chuyển về danh sách quản lý của Admin.</p>
+            </div>
+        </div>
+
+        <div class="guide-step">
+            <div class="guide-step-icon">4</div>
+            <div class="guide-step-content">
+                <h6>Tìm kiếm và Lọc (Alt + S)</h6>
+                <p class="small text-muted">Sử dụng thanh công cụ tại <strong>"Danh sách"</strong> để lọc quân nhân theo đơn vị hoặc trạng thái đặc biệt (Đảng viên, Đoàn viên, quân nhân nợ nần, vi phạm kỷ luật...). Nhấn <b>Enter</b> để tìm kiếm nhanh theo Tên hoặc CCCD.</p>
+            </div>
+        </div>
+
+        <div class="guide-step">
+            <div class="guide-step-icon">5</div>
+            <div class="guide-step-content">
+                <h6>Xuất bản Hồ sơ (PDF/CSV)</h6>
+                <p class="small text-muted">Tại bảng danh sách, nhấn biểu tượng <i class="bi bi-file-earmark-pdf"></i> để xuất Lý lịch trích ngang PDF chuẩn. Hệ thống tự động tổng hợp toàn bộ thông tin từ lịch sử công tác đến quan hệ gia đình vào tệp tin.</p>
+            </div>
+        </div>
+
+        <div class="guide-step">
+            <div class="guide-step-icon">6</div>
+            <div class="guide-step-content">
+                <h6>Sao lưu và Bảo mật</h6>
+                <p class="small text-muted">Sử dụng công cụ <b>"Sao lưu toàn bộ"</b> định kỳ hàng tuần. Trong trường hợp cài lại máy hoặc hỏng dữ liệu, hãy dùng chức năng <b>"Khôi phục từ tệp"</b> để lấy lại toàn bộ hồ sơ.</p>
+            </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-light rounded border">
+            <h6 class="fw-bold mb-2 small"><i class="bi bi-keyboard me-2"></i>HỆ THỐNG PHÍM TẮT NHANH</h6>
+            <div class="row g-2">
+                <div class="col-6 small"><code>Alt + 1</code>: Danh sách</div>
+                <div class="col-6 small"><code>Alt + 2</code>: Tổ chức</div>
+                <div class="col-6 small"><code>Alt + 3</code>: Nhập liệu</div>
+                <div class="col-6 small"><code>Alt + S</code>: Tìm kiếm</div>
+                <div class="col-6 small"><code>Alt + R</code>: Làm mới</div>
+                <div class="col-6 small"><code>Esc</code>: Đăng xuất/Quay lại</div>
+            </div>
+        </div>
+
+        <div class="alert alert-danger border-0 small mt-4">
+            <i class="bi bi-exclamation-octagon-fill me-2"></i><strong>CẢNH BÁO:</strong> Mật khẩu quản trị mặc định là <code>123456</code>. Hãy thực hiện đổi mật khẩu ngay trong lần đầu sử dụng để đảm bảo an toàn thông tin.
+        </div>
+    </div>
+</div>
 
     <!-- KIOSK LAYOUT -->
     <div id="kiosk-layout" class="d-none kiosk-container">

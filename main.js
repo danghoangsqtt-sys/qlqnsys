@@ -1,12 +1,9 @@
-
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const SoldierDB = require('./database');
 
-// THIẾT LẬP QUAN TRỌNG: Buộc Chromium sử dụng locale Tiếng Việt ngay từ lúc khởi động
-// Điều này sẽ thay đổi định dạng input date thành dd/mm/yyyy
+// THIẾT LẬP: Buộc Chromium sử dụng locale Tiếng Việt để định dạng ngày tháng dd/mm/yyyy
 app.commandLine.appendSwitch('lang', 'vi-VN');
 
 const db = new SoldierDB();
@@ -20,7 +17,6 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false, 
       webSecurity: false,
-      // Đảm bảo môi trường render cũng nhận diện ngôn ngữ vi
       spellcheck: false
     },
   });
@@ -65,7 +61,7 @@ ipcMain.handle('db:deleteUnit', (event, id) => {
     }
 });
 
-// 2. Custom Fields (NEW)
+// 2. Custom Fields
 ipcMain.handle('db:getCustomFields', (event, unitId) => {
     try {
         return db.getCustomFields(unitId);
@@ -112,7 +108,6 @@ ipcMain.handle('db:getSoldiers', (event, filter) => {
   }
 });
 
-// NEW: Get Single Soldier
 ipcMain.handle('db:getSoldier', (event, id) => {
   try {
     return db.getSoldierById(id);
@@ -132,7 +127,6 @@ ipcMain.handle('db:addSoldier', (event, data) => {
   }
 });
 
-// NEW: Update Soldier
 ipcMain.handle('db:updateSoldier', (event, { id, data }) => {
   try {
     db.updateSoldier(id, data);
@@ -159,7 +153,6 @@ ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
         const userDataPath = app.getPath('userData');
         const imagesDir = path.join(userDataPath, 'profile_images');
 
-        // Create dir if not exists
         if (!fs.existsSync(imagesDir)) {
             fs.mkdirSync(imagesDir, { recursive: true });
         }
@@ -177,72 +170,139 @@ ipcMain.handle('sys:saveImage', async (event, sourcePath) => {
     }
 });
 
-// 5. Export PDF (Cập nhật Logic xử lý JSON)
+// 5. NÂNG CẤP: Export PDF chi tiết (Sử dụng HTML-to-PDF)
 ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   try {
-    const soldier = db.getSoldierById(soldierId);
-    if (!soldier) throw new Error('Soldier not found');
+    const s = db.getSoldierById(soldierId);
+    if (!s) throw new Error('Không tìm thấy quân nhân');
 
-    const templatePath = path.join(__dirname, 'assets', 'templates', '1.pdf');
+    // Giải mã toàn bộ dữ liệu JSON từ Database
+    const bio = JSON.parse(s.tieu_su_ban_than || '[]');
+    const social = JSON.parse(s.mang_xa_hoi || '{"facebook":[], "zalo":[], "tiktok":[]}');
+    const familyRel = JSON.parse(s.quan_he_gia_dinh || '{"cha_me_anh_em":[], "vo":null, "con":[], "nguoi_yeu":[]}');
+    const familyGen = JSON.parse(s.thong_tin_gia_dinh_chung || '{}');
+    const foreign = JSON.parse(s.yeu_to_nuoc_ngoai || '{}');
+    const violations = JSON.parse(s.lich_su_vi_pham || '{}');
+    const finance = JSON.parse(s.tai_chinh_suc_khoe || '{}');
+    const customData = JSON.parse(s.custom_data || '{}');
 
-    // **NEW: Kiểm tra template và trả về lỗi rõ ràng**
-    if (!fs.existsSync(templatePath)) {
-      return { success: false, error: "LỖI: Không tìm thấy file template PDF tại đường dẫn 'assets/templates/1.pdf'. Vui lòng thêm file mẫu để chức năng hoạt động." };
-    }
+    let printWindow = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } });
 
-    const existingPdfBytes = fs.readFileSync(templatePath);
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: "Times New Roman", Times, serif; padding: 1.5cm; font-size: 11pt; line-height: 1.3; color: black; }
+            .header-table { width: 100%; border: none; margin-bottom: 10px; }
+            .nation { text-align: center; font-weight: bold; text-transform: uppercase; font-size: 12pt; }
+            .motto { text-align: center; font-weight: bold; border-bottom: 1px solid black; display: inline-block; padding-bottom: 2px; }
+            .doc-title { text-align: center; font-size: 16pt; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
+            
+            .photo-section { display: flex; margin-bottom: 20px; }
+            .photo-box { width: 3cm; height: 4cm; border: 1px solid black; text-align: center; display: flex; align-items: center; justify-content: center; margin-right: 20px; flex-shrink: 0; overflow: hidden; }
+            .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+            
+            .basic-grid { flex-grow: 1; }
+            .info-line { margin-bottom: 5px; border-bottom: 1px dotted #ccc; }
+            .label { font-weight: bold; }
+            
+            .section-title { font-weight: bold; text-transform: uppercase; background: #eee; padding: 4px; margin: 15px 0 10px 0; border-left: 5px solid #14452F; }
+            
+            table.data-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10pt; }
+            table.data-table th, table.data-table td { border: 1px solid black; padding: 4px; text-align: left; }
+            table.data-table th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
 
-    // Xử lý dữ liệu JSON (Chuyển đổi thành chuỗi tóm tắt cho PDF)
-    const vi_pham_obj = JSON.parse(soldier.lich_su_vi_pham || '{}');
-    const viPhamSummary = vi_pham_obj.vi_pham_dia_phuong?.co_khong ? `VP Địa phương: ${vi_pham_obj.vi_pham_dia_phuong.noi_dung}` : 'Không vi phạm tại địa phương.';
-    const custom_data_obj = JSON.parse(soldier.custom_data || '{}');
-    const customSummary = Object.keys(custom_data_obj).length > 0 ? `Đã nhập ${Object.keys(custom_data_obj).length} trường bổ sung.` : 'Không có TT bổ sung.';
+            .footer-table { width: 100%; margin-top: 40px; }
+            .footer-table td { text-align: center; width: 50%; vertical-align: top; }
+        </style>
+    </head>
+    <body>
+        <table class="header-table">
+            <tr>
+                <td class="nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br><span class="motto">Độc lập - Tự do - Hạnh phúc</span></td>
+            </tr>
+        </table>
 
-    const coords = {
-      ho_ten: { x: 150, y: 700 },
-      ngay_sinh: { x: 150, y: 680 },
-      cap_bac: { x: 400, y: 700 },
-      don_vi: { x: 150, y: 660 },
-      sdt_rieng: { x: 150, y: 640 },
-      lich_su_vi_pham_summary: { x: 150, y: 620 }, 
-      thong_tin_bo_sung_summary: { x: 150, y: 600 } 
-    };
+        <h1 class="doc-title">LÝ LỊCH QUÂN NHÂN</h1>
 
-    const drawText = (text, key) => {
-      if (!text || !coords[key]) return;
-      firstPage.drawText(String(text), {
-        x: coords[key].x,
-        y: coords[key].y,
-        size: 11,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    };
+        <div class="photo-section">
+            <div class="photo-box">
+                ${s.anh_dai_dien ? `<img src="file://${s.anh_dai_dien}">` : 'Ảnh 3x4'}
+            </div>
+            <div class="basic-grid">
+                <div class="info-line"><span class="label">Họ và tên:</span> <span style="text-transform: uppercase; font-weight: bold;">${s.ho_ten}</span></div>
+                <div class="info-line"><span class="label">Tên khác:</span> ${s.ten_khac || 'Không'}</div>
+                <div class="info-line"><span class="label">Ngày sinh:</span> ${s.ngay_sinh || '...'} | <span class="label">CCCD:</span> ${s.cccd || '...'}</div>
+                <div class="info-line"><span class="label">Cấp bậc:</span> ${s.cap_bac} | <span class="label">Chức vụ:</span> ${s.chuc_vu || '...'}</div>
+                <div class="info-line"><span class="label">Đơn vị:</span> ${s.don_vi}</div>
+                <div class="info-line"><span class="label">SĐT:</span> ${s.sdt_rieng || '...'}</div>
+                <div class="info-line"><span class="label">Quê quán:</span> ${s.noi_sinh || '...'}</div>
+                <div class="info-line"><span class="label">HKTT:</span> ${s.ho_khau_thuong_tru || '...'}</div>
+            </div>
+        </div>
 
-    drawText(soldier.ho_ten, 'ho_ten');
-    drawText(soldier.ngay_sinh, 'ngay_sinh');
-    drawText(soldier.cap_bac, 'cap_bac');
-    drawText(soldier.don_vi, 'don_vi');
-    drawText(soldier.sdt_rieng, 'sdt_rieng');
-    drawText(viPhamSummary, 'lich_su_vi_pham_summary');
-    drawText(customSummary, 'thong_tin_bo_sung_summary');
+        <div class="section-title">I. QUÁ TRÌNH CÔNG TÁC & CHÍNH TRỊ</div>
+        <div class="info-line"><span class="label">Ngày nhập ngũ:</span> ${s.nhap_ngu_ngay || '...'}</div>
+        <div class="info-line"><span class="label">Ngày vào Đảng:</span> ${s.vao_dang_ngay || 'Chưa'} | <span class="label">Ngày vào Đoàn:</span> ${s.ngay_vao_doan || '...'}</div>
+        <div class="info-line"><span class="label">Trình độ văn hóa:</span> ${s.trinh_do_van_hoa || '...'} (${s.da_tot_nghiep ? 'Đã tốt nghiệp' : 'Chưa tốt nghiệp'})</div>
+        
+        <p class="label" style="margin-bottom:0">Tóm tắt tiểu sử bản thân:</p>
+        <table class="data-table">
+            <tr><th>Thời gian</th><th>Làm gì? Chức vụ?</th><th>Ở đâu?</th></tr>
+            ${bio.length > 0 ? bio.map(b => `<tr><td>${b.time}</td><td>${b.job}</td><td>${b.place}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center">Trống</td></tr>'}
+        </table>
+
+        <div class="section-title">II. QUAN HỆ GIA ĐÌNH</div>
+        <div class="info-line"><span class="label">Mức sống GĐ:</span> ${familyGen.muc_song || '...'} | <span class="label">Nghề chính:</span> ${familyGen.nghe_nghiep_chinh || '...'}</div>
+        
+        <p class="label" style="margin-bottom:0">Thân nhân (Bố, mẹ, anh chị em ruột):</p>
+        <table class="data-table">
+            <tr><th>Quan hệ</th><th>Họ tên</th><th>Năm sinh</th><th>Nghề nghiệp</th><th>Địa chỉ</th></tr>
+            ${familyRel.cha_me_anh_em?.length > 0 ? familyRel.cha_me_anh_em.map(f => `<tr><td>${f.quan_he}</td><td>${f.ho_ten}</td><td>${f.nam_sinh}</td><td>${f.nghe_nghiep}</td><td>${f.cho_o}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center">Trống</td></tr>'}
+        </table>
+
+        ${familyRel.vo ? `
+        <p class="label" style="margin-top:10px">Vợ / Chồng:</p>
+        <div class="info-line">Họ tên: ${familyRel.vo.ho_ten} | Năm sinh: ${familyRel.vo.nam_sinh} | SĐT: ${familyRel.vo.sdt}</div>
+        ` : ''}
+
+        <div class="section-title">III. LỊCH SỬ VI PHẠM & AN NINH</div>
+        <div class="info-line"><span class="label">Vi phạm địa phương:</span> ${violations.vi_pham_dia_phuong?.co_khong ? violations.vi_pham_dia_phuong.noi_dung : 'Không'}</div>
+        <div class="info-line"><span class="label">Tệ nạn:</span> Đánh bạc (${violations.danh_bac?.co_khong ? 'Có' : 'Không'}), Ma túy (${violations.ma_tuy?.co_khong ? 'Có' : 'Không'})</div>
+        <div class="info-line"><span class="label">Tài chính:</span> ${finance.vay_no?.co_khong ? `Đang nợ ${finance.vay_no.so_tien} VNĐ (${finance.vay_no.muc_dich})` : 'Không vay nợ'}</div>
+        <div class="info-line"><span class="label">Yếu tố nước ngoài:</span> ${foreign.than_nhan?.length > 0 ? `Có thân nhân ở ${foreign.than_nhan.map(x=>x.nuoc).join(', ')}` : 'Không'}</div>
+
+        <div class="section-title">IV. Ý KIẾN & NGUYỆN VỌNG</div>
+        <p style="font-style: italic;">${s.y_kien_nguyen_vong || 'Không có ý kiến cụ thể.'}</p>
+
+        <table class="footer-table">
+            <tr>
+                <td><strong>XÁC NHẬN CỦA ĐƠN VỊ</strong><br><br><br><br><br>................................................</td>
+                <td><em>Ngày...... tháng...... năm 20...</em><br><strong>NGƯỜI KHAI HỒ SƠ</strong><br><br><br><br><br><strong>${s.ho_ten.toUpperCase()}</strong></td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    `;
+
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Lưu Hồ Sơ PDF',
-      defaultPath: `HoSo_${soldier.ho_ten.replace(/\s+/g, '_')}.pdf`,
+      defaultPath: `HoSo_${s.ho_ten.replace(/\s+/g, '_')}.pdf`,
       filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
     });
 
     if (filePath) {
-      const pdfBytes = await pdfDoc.save();
-      fs.writeFileSync(filePath, pdfBytes);
+      const data = await printWindow.webContents.printToPDF({ marginsType: 0, pageSize: 'A4', printBackground: true });
+      fs.writeFileSync(filePath, data);
+      printWindow.close();
       return { success: true, path: filePath };
     }
 
+    printWindow.close();
     return { success: false, cancelled: true };
 
   } catch (err) {
@@ -251,29 +311,18 @@ ipcMain.handle('sys:exportPDF', async (event, soldierId) => {
   }
 });
 
-// **NEW: 6. Export CSV Handler**
+// 6. Export CSV Handler
 ipcMain.handle('sys:exportUnitsCSV', async () => {
     try {
         const units = db.getUnits();
-        
-        // 1. Tạo headers tiếng Việt
         const headers = ['ID', 'Tên Đơn Vị', 'ID Cấp Trên'];
-        
-        // 2. Định dạng dữ liệu
         let csvContent = headers.join(',') + '\n';
         units.forEach(unit => {
-            const row = [
-                unit.id,
-                `"${unit.ten_don_vi.replace(/"/g, '""')}"`, // Xử lý dấu nháy kép
-                unit.cap_tren_id || '' // NULL thành rỗng
-            ];
+            const row = [unit.id, `"${unit.ten_don_vi.replace(/"/g, '""')}"`, unit.cap_tren_id || ''];
             csvContent += row.join(',') + '\n';
         });
 
-        // 3. Thêm BOM (Byte Order Mark) để Excel nhận diện UTF-8 (tiếng Việt)
-        const BOM = "\uFEFF";
-        const contentWithBOM = BOM + csvContent;
-
+        const BOM = "\uFEFF"; // Byte Order Mark cho UTF-8 Excel
         const { filePath } = await dialog.showSaveDialog(mainWindow, {
             title: 'Lưu Danh Sách Đơn Vị',
             defaultPath: 'Danh_Sach_Don_Vi.csv',
@@ -281,14 +330,11 @@ ipcMain.handle('sys:exportUnitsCSV', async () => {
         });
 
         if (filePath) {
-            fs.writeFileSync(filePath, contentWithBOM, 'utf8');
+            fs.writeFileSync(filePath, BOM + csvContent, 'utf8');
             return { success: true, path: filePath };
         }
-        
         return { success: false, cancelled: true };
-
     } catch (err) {
-        console.error("Export CSV Error:", err);
         return { success: false, error: err.message };
     }
 });

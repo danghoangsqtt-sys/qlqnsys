@@ -807,7 +807,7 @@
                     </form>
                 </div>
             </div>
-
+           
             <div class="card shadow-sm border-0 mb-4 border-start border-4 border-warning">
                 <div class="card-header bg-white fw-bold text-military border-bottom py-3">
                     <i class="bi bi-database-fill-gear me-2 text-warning"></i>QUẢN TRỊ DỮ LIỆU & BẢO TRÌ
@@ -816,6 +816,9 @@
                     <p class="small text-muted mb-4">Quản lý tệp tin cơ sở dữ liệu. Vui lòng sao lưu định kỳ để tránh mất dữ liệu.</p>
                     
                     <div class="d-grid gap-2">
+                        <button class="btn btn-primary mt-3" onclick="updateSoftware()">
+                            <i class="bi bi-cloud-download me-2"></i> Cập nhật phiên bản mới
+                        </button>
                         <button class="btn btn-light border text-start py-2" onclick="backupDatabase()">
                             <i class="bi bi-cloud-arrow-up-fill me-2 text-primary"></i> <b>Sao lưu toàn bộ</b>
                             <small class="d-block text-muted">Xuất tệp tin .db để lưu trữ an toàn</small>

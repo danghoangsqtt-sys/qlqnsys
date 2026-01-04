@@ -368,7 +368,9 @@ async function populateForm(container, s) {
         }
     });
     if (s.anh_dai_dien) {
-        container.querySelector('#imagePreview').src = s.anh_dai_dien;
+    // Chuyển đổi đường dẫn ổ đĩa thành định dạng mà phần mềm hiểu được
+    const cleanPath = s.anh_dai_dien.replace(/\\/g, '/');
+    container.querySelector('#imagePreview').src = `file:///${cleanPath}?t=${Date.now()}`;
     }
     if (s.da_tot_nghiep !== undefined) {
         const rad = container.querySelector(`input[name="da_tot_nghiep"][value="${s.da_tot_nghiep}"]`);
@@ -1398,6 +1400,18 @@ window.clearAllData = async function() {
             if (res.error) {
                 showNotification(`Lỗi khi xóa dữ liệu: ${res.error}`, "danger");
             }
+        }
+    }
+};
+
+window.updateSoftware = async function() {
+    const confirmUpdate = confirm("Bạn có muốn thực hiện cập nhật phần mềm không? Phần mềm sẽ khởi động lại.");
+    if (confirmUpdate) {
+        const res = await ipcRenderer.invoke('sys:applyUpdate');
+        if (res.success) {
+            alert("Cập nhật thành công!");
+        } else if (!res.cancelled) {
+            alert("Lỗi cập nhật: " + res.error);
         }
     }
 };

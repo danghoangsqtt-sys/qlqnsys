@@ -370,3 +370,32 @@ ipcMain.handle('sys:clearAllData', async () => {
         return { success: false, error: err.message };
     }
 });
+
+// Chức năng cập nhật: Sao chép tệp từ bản update vào thư mục hiện tại
+ipcMain.handle('sys:applyUpdate', async () => {
+    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+        title: 'Chọn thư mục chứa bản cập nhật từ Nhà phát triển',
+        properties: ['openDirectory']
+    });
+
+    if (filePaths && filePaths.length > 0) {
+        const updateFolder = filePaths[0];
+        const appFolder = __dirname; // Thư mục hiện tại của phần mềm
+
+        try {
+            // Sao chép tất cả tệp từ thư mục update vào phần mềm
+            const files = fs.readdirSync(updateFolder);
+            files.forEach(file => {
+                fs.copyFileSync(path.join(updateFolder, file), path.join(appFolder, file));
+            });
+            
+            // Khởi động lại phần mềm để áp dụng
+            app.relaunch();
+            app.exit(0);
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    }
+    return { success: false, cancelled: true };
+});
